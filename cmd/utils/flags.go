@@ -289,6 +289,11 @@ var (
 		Usage: "Maximum amount of time non-executable transaction are queued",
 		Value: eth.DefaultConfig.TxPool.Lifetime,
 	}
+	ProfileRegistryAddrFlag = cli.StringFlag{
+		Name:  "sonm.profileregistryaddr",
+		Usage: "Address of SONM ProfileRegistry contract",
+		Value: eth.DefaultConfig.Sonm.ProfileRegistryAddr,
+	}
 	// Performance tuning settings
 	CacheFlag = cli.IntFlag{
 		Name:  "cache",
@@ -940,6 +945,12 @@ func setTxPool(ctx *cli.Context, cfg *core.TxPoolConfig) {
 	}
 }
 
+func setSonmExtensions(ctx *cli.Context, cfg *core.SonmConfig) {
+	if ctx.GlobalIsSet(ProfileRegistryAddrFlag.Name) {
+		cfg.ProfileRegistryAddr = ctx.GlobalString(ProfileRegistryAddrFlag.Name)
+	}
+}
+
 func setEthash(ctx *cli.Context, cfg *eth.Config) {
 	if ctx.GlobalIsSet(EthashCacheDirFlag.Name) {
 		cfg.Ethash.CacheDir = ctx.GlobalString(EthashCacheDirFlag.Name)
@@ -1021,6 +1032,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 	setEtherbase(ctx, ks, cfg)
 	setGPO(ctx, &cfg.GPO)
 	setTxPool(ctx, &cfg.TxPool)
+	setSonmExtensions(ctx, &cfg.Sonm)
 	setEthash(ctx, cfg)
 
 	switch {

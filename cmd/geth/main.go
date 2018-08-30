@@ -118,6 +118,7 @@ var (
 		utils.GpoBlocksFlag,
 		utils.GpoPercentileFlag,
 		utils.ExtraDataFlag,
+		utils.ProfileRegistryAddrFlag,
 		configFileFlag,
 	}
 
@@ -248,6 +249,12 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		}
 		stateReader := ethclient.NewClient(rpcClient)
 
+		var ethereum *eth.Ethereum
+		if err := stack.Service(&ethereum); err != nil {
+			utils.Fatalf("Ethereum service not running: %v", err)
+		}
+
+		ethereum.SetNode(stack)
 		// Open any wallets already attached
 		for _, wallet := range stack.AccountManager().Wallets() {
 			if err := wallet.Open(""); err != nil {
@@ -301,5 +308,6 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		if err := ethereum.StartMining(true); err != nil {
 			utils.Fatalf("Failed to start mining: %v", err)
 		}
+
 	}
 }

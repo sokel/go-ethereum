@@ -135,6 +135,12 @@ var AppHelpFlagGroups = []flagGroup{
 		},
 	},
 	{
+		Name: "SONM EXTENSIONS",
+		Flags: []cli.Flag{
+			utils.ProfileRegistryAddrFlag,
+		},
+	},
+	{
 		Name: "ACCOUNT",
 		Flags: []cli.Flag{
 			utils.UnlockedAccountFlag,

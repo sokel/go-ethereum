@@ -214,6 +214,8 @@ type TxPool struct {
 
 	superheroAddress common.Address // Address who can deploy smart contracts
 	maxGasPerTx      uint64         // Max gas price per tx, if pool gas estimation is greater than this transaction must dropped
+
+	Sonm SonmExtension
 }
 
 const superheroAddressHex = "0x1cad60b04be89862249473ead04c8934ed00e4a2"
@@ -451,6 +453,10 @@ func (pool *TxPool) Stop() {
 
 	if pool.journal != nil {
 		pool.journal.close()
+	}
+
+	if pool.Sonm != nil {
+		pool.Sonm.Stop()
 	}
 	log.Info("Transaction pool stopped")
 }
@@ -813,6 +819,10 @@ func (pool *TxPool) addTx(tx *types.Transaction, local bool) error {
 	if !replace {
 		from, _ := types.Sender(pool.signer, tx) // already validated
 		pool.promoteExecutables([]common.Address{from})
+		if pool.Sonm != nil {
+			slots := pool.Sonm.AccountSlots(from)
+			log.Info("Submitted transaction", "from", from.Hex(), "slots", slots)
+		}
 	}
 	return nil
 }
@@ -989,6 +999,11 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) {
 		spammers := prque.New()
 		for addr, list := range pool.pending {
 			// Only evict transactions from high rollers
+			if pool.Sonm != nil && !pool.locals.contains(addr) && uint64(list.Len()) > pool.Sonm.AccountSlots(addr) {
+				log.Warn("Level for account", "account", addr.Hex(), "level", pool.Sonm.AccountSlots(addr))
+				spammers.Push(addr, float32(list.Len()))
+				continue
+			}
 			if !pool.locals.contains(addr) && uint64(list.Len()) > pool.config.AccountSlots {
 				spammers.Push(addr, float32(list.Len()))
 			}

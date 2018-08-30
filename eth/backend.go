@@ -25,6 +25,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -92,6 +93,8 @@ type Ethereum struct {
 	netRPCService *ethapi.PublicNetAPI
 
 	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
+
+	stack *node.Node // Stack to talk to contracts
 }
 
 func (s *Ethereum) AddLesServer(ls LesServer) {
@@ -323,6 +326,24 @@ func (s *Ethereum) Etherbase() (eb common.Address, err error) {
 		}
 	}
 	return common.Address{}, fmt.Errorf("etherbase must be explicitly specified")
+}
+
+func (s *Ethereum) SetNode(stack *node.Node) {
+	rpcClient, err := stack.Attach()
+	if err != nil {
+		log.Error("failed to attach to node stack", "err", err)
+		return
+	}
+
+	ethclient := ethclient.NewClient(rpcClient)
+	s.stack = stack
+	sonmExtension, err := core.NewSonmExtension(s.config.Sonm, ethclient)
+	if err != nil {
+		log.Error("failed to init SONM extensions", "err", err)
+		return
+	}
+
+	s.txPool.Sonm = sonmExtension
 }
 
 // set in js console via admin interface or wrapper from cli flags
